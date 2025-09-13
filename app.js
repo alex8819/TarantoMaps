@@ -17,9 +17,69 @@ class TarantoDistrictsMap {
         this.init();
     }
 
+    // Funzione per migrare dati esistenti e gestire vie omonime
+    migrateDuplicateStreets() {
+        console.log('Checking for duplicate street names and migrating data...');
+
+        const savedStreets = localStorage.getItem('tarantoStreetsData');
+        if (!savedStreets) return;
+
+        try {
+            const originalData = JSON.parse(savedStreets);
+            const migratedData = {};
+            const streetsByName = {};
+
+            // Prima passata: identifica vie omonime
+            Object.entries(originalData).forEach(([streetKey, data]) => {
+                const baseName = streetKey.includes('(') ? streetKey.split('(')[0].trim() : streetKey;
+
+                if (!streetsByName[baseName]) {
+                    streetsByName[baseName] = [];
+                }
+                streetsByName[baseName].push({ key: streetKey, data });
+            });
+
+            // Seconda passata: crea chiavi appropriate
+            Object.entries(streetsByName).forEach(([baseName, streets]) => {
+                if (streets.length === 1) {
+                    // Via unica, mantieni nome originale
+                    const street = streets[0];
+                    migratedData[baseName] = street.data;
+                } else {
+                    // Vie omonime, aggiungi quartiere alla chiave
+                    console.log(`Found duplicate street: ${baseName} in ${streets.length} locations`);
+                    streets.forEach(street => {
+                        const district = street.data.district;
+                        if (district && district !== 'Non assegnato') {
+                            const newKey = `${baseName} (${district})`;
+                            migratedData[newKey] = street.data;
+                            console.log(`Migrated: ${baseName} → ${newKey}`);
+                        } else {
+                            // Se non ha quartiere, mantieni nome base ma aggiungi un identificatore
+                            const newKey = street.key !== baseName ? street.key : `${baseName} (Posizione ${streets.indexOf(street) + 1})`;
+                            migratedData[newKey] = street.data;
+                        }
+                    });
+                }
+            });
+
+            // Salva dati migrati
+            localStorage.setItem('tarantoStreetsData', JSON.stringify(migratedData));
+            console.log(`Migration completed: ${Object.keys(originalData).length} → ${Object.keys(migratedData).length} streets`);
+
+            return migratedData;
+        } catch (error) {
+            console.error('Error during migration:', error);
+            return null;
+        }
+    }
+
     // Carica dati persistenti dal localStorage
     loadPersistedData() {
         try {
+            // Prima esegui migrazione per gestire vie omonime
+            const migratedData = this.migrateDuplicateStreets();
+
             // Carica database vie se esistente
             const savedStreets = localStorage.getItem('tarantoStreetsData');
             if (savedStreets) {
@@ -221,20 +281,24 @@ class TarantoDistrictsMap {
     }
 
     searchLocalStreets(streetName) {
-        // Use fuzzy search if real data is available
-        if (this.useRealData && typeof QuartieriUtils !== 'undefined') {
-            const matches = QuartieriUtils.fuzzySearchStreets(streetName);
-            if (matches.length > 0) {
-                const bestMatch = matches[0];
-                const streetData = this.streetsData[bestMatch];
-                return {
-                    address: bestMatch,
-                    district: streetData.district,
-                    coordinates: streetData.coordinates,
-                    source: 'local',
-                    confidence: 'high'
-                };
-            }
+        // Usa sempre i dati locali aggiornati con ricerca fuzzy migliorata
+        const suggestions = this.getSuggestions(streetName);
+        if (suggestions.length > 0) {
+            const bestMatch = suggestions[0];
+            const streetData = this.streetsData[bestMatch];
+
+            // Se è una via con quartiere, mostra il nome base per user-friendly display
+            const displayName = bestMatch.includes('(') ? bestMatch.split('(')[0].trim() : bestMatch;
+            const districtInfo = bestMatch.includes('(') ? bestMatch.match(/\((.*?)\)/)?.[1] : streetData.district;
+
+            return {
+                address: displayName,
+                district: districtInfo || streetData.district,
+                coordinates: streetData.coordinates,
+                source: 'local',
+                confidence: 'high',
+                fullKey: bestMatch // Mantieni la chiave completa per riferimenti interni
+            };
         }
 
         // Fallback to simple search
@@ -472,18 +536,47 @@ class TarantoDistrictsMap {
     }
 
     getSuggestions(query) {
-        if (this.useRealData && typeof QuartieriUtils !== 'undefined') {
-            return QuartieriUtils.fuzzySearchStreets(query);
-        }
-
-        // Fallback search
+        // Sempre usa i dati locali aggiornati con ricerca fuzzy migliorata
         const lowerQuery = query.toLowerCase();
         return Object.keys(this.streetsData)
-            .filter(street => street.toLowerCase().includes(lowerQuery))
+            .filter(streetKey => {
+                const lowerStreet = streetKey.toLowerCase();
+                // Ricerca sia nel nome completo che nel nome base (senza quartiere)
+                const baseName = streetKey.includes('(') ? streetKey.split('(')[0].trim() : streetKey;
+                const lowerBaseName = baseName.toLowerCase();
+
+                return lowerStreet.includes(lowerQuery) ||
+                       lowerBaseName.includes(lowerQuery) ||
+                       lowerQuery.split(' ').every(word => lowerStreet.includes(word));
+            })
             .sort((a, b) => {
-                const aIndex = a.toLowerCase().indexOf(lowerQuery);
-                const bIndex = b.toLowerCase().indexOf(lowerQuery);
-                return aIndex - bIndex;
+                const aLower = a.toLowerCase();
+                const bLower = b.toLowerCase();
+
+                // Estrai nome base per confronto
+                const aBase = a.includes('(') ? a.split('(')[0].trim() : a;
+                const bBase = b.includes('(') ? b.split('(')[0].trim() : b;
+
+                const aIndex = aLower.indexOf(lowerQuery);
+                const bIndex = bLower.indexOf(lowerQuery);
+                const aBaseIndex = aBase.toLowerCase().indexOf(lowerQuery);
+                const bBaseIndex = bBase.toLowerCase().indexOf(lowerQuery);
+
+                // Prioritizza match esatti all'inizio del nome base
+                if (aBaseIndex === 0 && bBaseIndex !== 0) return -1;
+                if (bBaseIndex === 0 && aBaseIndex !== 0) return 1;
+                if (aBaseIndex === 0 && bBaseIndex === 0) {
+                    // Se entrambi iniziano con la query, ordina per nome base poi per quartiere
+                    const baseCompare = aBase.localeCompare(bBase);
+                    return baseCompare !== 0 ? baseCompare : a.localeCompare(b);
+                }
+
+                // Poi per posizione del match
+                if (aIndex !== bIndex && aIndex >= 0 && bIndex >= 0) {
+                    return aIndex - bIndex;
+                }
+
+                return a.localeCompare(b);
             });
     }
 
@@ -524,22 +617,24 @@ class TarantoDistrictsMap {
 
     // Enhanced public API
     getStats() {
-        if (this.useRealData && typeof QuartieriUtils !== 'undefined') {
-            return QuartieriUtils.getStats();
-        }
+        // Sempre usa i dati locali aggiornati invece di QuartieriUtils
+        const totalPopulation = this.quartieriData.features
+            .reduce((sum, feature) => {
+                const pop = feature.properties.population ? feature.properties.population.match(/\d+/) : null;
+                return sum + (pop ? parseInt(pop[0]) * 1000 : 0);
+            }, 0);
 
         return {
             totalDistricts: this.quartieriData.features.length,
             totalStreets: Object.keys(this.streetsData).length,
+            totalPopulation: totalPopulation,
+            averagePopulationPerDistrict: totalPopulation > 0 ? Math.round(totalPopulation / this.quartieriData.features.length) : 0,
             dataSource: this.useRealData ? 'real' : 'demo'
         };
     }
 
     getStreetsByDistrict(districtName) {
-        if (this.useRealData && typeof QuartieriUtils !== 'undefined') {
-            return QuartieriUtils.getStreetsByDistrict(districtName);
-        }
-
+        // Sempre usa i dati locali aggiornati invece di QuartieriUtils
         return Object.entries(this.streetsData)
             .filter(([street, data]) => data.district === districtName)
             .map(([street, data]) => street);
@@ -1069,8 +1164,29 @@ class TarantoDistrictsMap {
                     }
                 }
 
+                // Crea una chiave unica per la via per gestire omonime
+                let streetKey = street.name;
+
+                // Se esiste già una via con lo stesso nome ma quartiere diverso, crea chiave composta
+                if (newStreetsData[street.name] && newStreetsData[street.name].district !== assignedDistrict) {
+                    // Rinomina la via esistente per includere il quartiere
+                    const existingStreet = newStreetsData[street.name];
+                    const existingDistrict = existingStreet.district;
+                    if (existingDistrict !== 'Non assegnato') {
+                        const oldKey = street.name;
+                        const newExistingKey = `${street.name} (${existingDistrict})`;
+                        newStreetsData[newExistingKey] = existingStreet;
+                        delete newStreetsData[oldKey];
+                    }
+
+                    // Usa chiave composta per la via corrente se ha quartiere
+                    if (assignedDistrict !== 'Non assegnato') {
+                        streetKey = `${street.name} (${assignedDistrict})`;
+                    }
+                }
+
                 // Crea l'entry nel database
-                newStreetsData[street.name] = {
+                newStreetsData[streetKey] = {
                     district: assignedDistrict,
                     coordinates: street.centroid ?
                         [street.centroid.lat, street.centroid.lon] :

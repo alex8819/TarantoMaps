@@ -407,6 +407,268 @@ const realQuartieriData = {
                     [17.2200, 40.4200]
                 ]]
             }
+        },
+        {
+            type: "Feature",
+            properties: {
+                name: "Montegranaro",
+                description: "Quartiere residenziale nella zona nord-ovest di Taranto",
+                color: "#f39c12",
+                population: "Circa 8.000 abitanti",
+                area_km2: 2.2,
+                postal_codes: ["74122"],
+                main_streets: ["Via Montegranaro", "Via Sicilia"]
+            },
+            geometry: {
+                type: "Polygon",
+                coordinates: [[
+                    [17.2100, 40.4900],
+                    [17.2150, 40.4920],
+                    [17.2200, 40.4940],
+                    [17.2230, 40.4950],
+                    [17.2250, 40.4960],
+                    [17.2270, 40.4950],
+                    [17.2280, 40.4930],
+                    [17.2270, 40.4910],
+                    [17.2250, 40.4895],
+                    [17.2220, 40.4885],
+                    [17.2180, 40.4880],
+                    [17.2140, 40.4885],
+                    [17.2100, 40.4900]
+                ]]
+            }
+        },
+        {
+            type: "Feature",
+            properties: {
+                name: "Corvisea",
+                description: "Quartiere nella zona est di Taranto",
+                color: "#9b59b6",
+                population: "Circa 6.500 abitanti",
+                area_km2: 1.8,
+                postal_codes: ["74123"],
+                main_streets: ["Via Corvisea", "Via Calabria"]
+            },
+            geometry: {
+                type: "Polygon",
+                coordinates: [[
+                    [17.2450, 40.4700],
+                    [17.2500, 40.4720],
+                    [17.2550, 40.4740],
+                    [17.2580, 40.4750],
+                    [17.2600, 40.4760],
+                    [17.2590, 40.4780],
+                    [17.2570, 40.4790],
+                    [17.2540, 40.4785],
+                    [17.2510, 40.4775],
+                    [17.2480, 40.4760],
+                    [17.2460, 40.4740],
+                    [17.2450, 40.4720],
+                    [17.2450, 40.4700]
+                ]]
+            }
+        },
+        {
+            type: "Feature",
+            properties: {
+                name: "Tre Carrare",
+                description: "Quartiere storico nella zona centrale di Taranto",
+                color: "#2ecc71",
+                population: "Circa 4.200 abitanti",
+                area_km2: 1.1,
+                postal_codes: ["74121"],
+                main_streets: ["Via Tre Carrare", "Via Campania"]
+            },
+            geometry: {
+                type: "Polygon",
+                coordinates: [[
+                    [17.2300, 40.4800],
+                    [17.2330, 40.4810],
+                    [17.2360, 40.4820],
+                    [17.2380, 40.4830],
+                    [17.2390, 40.4840],
+                    [17.2385, 40.4850],
+                    [17.2370, 40.4855],
+                    [17.2350, 40.4850],
+                    [17.2320, 40.4840],
+                    [17.2305, 40.4825],
+                    [17.2300, 40.4800]
+                ]]
+            }
+        },
+        {
+            type: "Feature",
+            properties: {
+                name: "Battisti",
+                description: "Quartiere residenziale dedicato a Cesare Battisti",
+                color: "#e67e22",
+                population: "Circa 5.800 abitanti",
+                area_km2: 1.6,
+                postal_codes: ["74121"],
+                main_streets: ["Via Battisti", "Via Veneto"]
+            },
+            geometry: {
+                type: "Polygon",
+                coordinates: [[
+                    [17.2200, 40.4650],
+                    [17.2240, 40.4670],
+                    [17.2280, 40.4690],
+                    [17.2300, 40.4700],
+                    [17.2310, 40.4710],
+                    [17.2305, 40.4725],
+                    [17.2290, 40.4730],
+                    [17.2270, 40.4725],
+                    [17.2240, 40.4710],
+                    [17.2220, 40.4690],
+                    [17.2205, 40.4670],
+                    [17.2200, 40.4650]
+                ]]
+            }
+        },
+        {
+            type: "Feature",
+            properties: {
+                name: "Solito",
+                description: "Quartiere nella zona sud-ovest di Taranto",
+                color: "#34495e",
+                population: "Circa 7.200 abitanti",
+                area_km2: 2.0,
+                postal_codes: ["74122"],
+                main_streets: ["Via Solito", "Via Abruzzo"]
+            },
+            geometry: {
+                type: "Polygon",
+                coordinates: [[
+                    [17.2050, 40.4600],
+                    [17.2100, 40.4620],
+                    [17.2150, 40.4640],
+                    [17.2180, 40.4650],
+                    [17.2200, 40.4660],
+                    [17.2190, 40.4680],
+                    [17.2170, 40.4690],
+                    [17.2140, 40.4685],
+                    [17.2110, 40.4675],
+                    [17.2080, 40.4660],
+                    [17.2060, 40.4640],
+                    [17.2050, 40.4620],
+                    [17.2050, 40.4600]
+                ]]
+            }
+        },
+        {
+            type: "Feature",
+            properties: {
+                name: "Porta Napoli",
+                description: "Quartiere storico all'ingresso della città",
+                color: "#16a085",
+                population: "Circa 3.800 abitanti",
+                area_km2: 0.9,
+                postal_codes: ["74121"],
+                main_streets: ["Via Porta Napoli", "Corso Due Mari"]
+            },
+            geometry: {
+                type: "Polygon",
+                coordinates: [[
+                    [17.2380, 40.4780],
+                    [17.2410, 40.4790],
+                    [17.2430, 40.4800],
+                    [17.2445, 40.4810],
+                    [17.2450, 40.4820],
+                    [17.2445, 40.4830],
+                    [17.2430, 40.4835],
+                    [17.2410, 40.4830],
+                    [17.2390, 40.4820],
+                    [17.2385, 40.4800],
+                    [17.2380, 40.4780]
+                ]]
+            }
+        },
+        {
+            type: "Feature",
+            properties: {
+                name: "Italia",
+                description: "Quartiere nella zona centrale di Taranto",
+                color: "#27ae60",
+                population: "Circa 6.000 abitanti",
+                area_km2: 1.7,
+                postal_codes: ["74121"],
+                main_streets: ["Via Italia", "Viale Italia"]
+            },
+            geometry: {
+                type: "Polygon",
+                coordinates: [[
+                    [17.2320, 40.4720],
+                    [17.2360, 40.4740],
+                    [17.2400, 40.4760],
+                    [17.2420, 40.4770],
+                    [17.2430, 40.4780],
+                    [17.2425, 40.4795],
+                    [17.2410, 40.4800],
+                    [17.2390, 40.4795],
+                    [17.2370, 40.4785],
+                    [17.2350, 40.4770],
+                    [17.2330, 40.4750],
+                    [17.2320, 40.4730],
+                    [17.2320, 40.4720]
+                ]]
+            }
+        },
+        {
+            type: "Feature",
+            properties: {
+                name: "Palumbo",
+                description: "Quartiere residenziale nella zona nord di Taranto",
+                color: "#8e44ad",
+                population: "Circa 4.500 abitanti",
+                area_km2: 1.3,
+                postal_codes: ["74122"],
+                main_streets: ["Via Palumbo", "Via Liguria"]
+            },
+            geometry: {
+                type: "Polygon",
+                coordinates: [[
+                    [17.2150, 40.4850],
+                    [17.2180, 40.4870],
+                    [17.2210, 40.4880],
+                    [17.2230, 40.4890],
+                    [17.2240, 40.4900],
+                    [17.2235, 40.4915],
+                    [17.2220, 40.4920],
+                    [17.2200, 40.4915],
+                    [17.2180, 40.4905],
+                    [17.2165, 40.4890],
+                    [17.2155, 40.4870],
+                    [17.2150, 40.4850]
+                ]]
+            }
+        },
+        {
+            type: "Feature",
+            properties: {
+                name: "Isola",
+                description: "Quartiere insulare collegato alla terraferma",
+                color: "#d35400",
+                population: "Circa 2.800 abitanti",
+                area_km2: 0.8,
+                postal_codes: ["74123"],
+                main_streets: ["Via Isola", "Ponte Girevole"]
+            },
+            geometry: {
+                type: "Polygon",
+                coordinates: [[
+                    [17.2280, 40.4680],
+                    [17.2300, 40.4690],
+                    [17.2320, 40.4700],
+                    [17.2330, 40.4710],
+                    [17.2335, 40.4720],
+                    [17.2330, 40.4730],
+                    [17.2320, 40.4735],
+                    [17.2300, 40.4730],
+                    [17.2285, 40.4720],
+                    [17.2280, 40.4700],
+                    [17.2280, 40.4680]
+                ]]
+            }
         }
     ]
 };
