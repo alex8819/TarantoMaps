@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node:*)",
+      "Bash(mysql:*)",
+      "Bash(npm start)",
+      "Bash(pkill:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm run lint)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_install",
+      "WebFetch(domain:localhost)",
+      "Bash(curl:*)",
+      "Bash(lsof:*)",
+      "Bash(PORT=3001 npm start)",
+      "mcp__playwright__browser_resize",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_press_key",
+      "mcp__playwright__browser_hover",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_handle_dialog"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "defaultMode": "acceptEdits"
+}

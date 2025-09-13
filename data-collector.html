@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taranto Data Collector</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .status {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .log {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #27ae60;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .data-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .data-preview {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .export-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Taranto Data Collector</h1>
+        <p>Raccolta dati reali di vie e quartieri da OpenStreetMap</p>
+    </div>
+
+    <div class="controls">
+        <button id="collectStreetsBtn">Raccogli Vie</button>
+        <button id="collectDistrictsBtn">Raccogli Quartieri</button>
+        <button id="collectAllBtn">Raccogli Tutto</button>
+        <button id="exportBtn" disabled>Esporta Dati</button>
+        <button id="clearLogBtn">Pulisci Log</button>
+    </div>
+
+    <div class="status">
+        <h3>Stato Raccolta Dati</h3>
+        <div>Vie: <span id="streetsCount">0</span></div>
+        <div>Quartieri: <span id="districtsCount">0</span></div>
+        <div class="progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div id="statusText">Pronto per iniziare</div>
+    </div>
+
+    <div class="data-section">
+        <h3>Log Operazioni</h3>
+        <div class="log" id="logArea"></div>
+    </div>
+
+    <div class="data-section">
+        <h3>Anteprima Dati Vie</h3>
+        <div class="data-preview" id="streetsPreview">Nessun dato raccolto</div>
+    </div>
+
+    <div class="data-section">
+        <h3>Anteprima Dati Quartieri</h3>
+        <div class="data-preview" id="districtsPreview">Nessun dato raccolto</div>
+    </div>
+
+    <div class="export-section">
+        <h3>Esporta Dati</h3>
+        <textarea id="exportData" placeholder="I dati esportati appariranno qui..."></textarea>
+        <br><br>
+        <button id="copyToClipboardBtn" disabled>Copia negli Appunti</button>
+        <button id="downloadBtn" disabled>Download JSON</button>
+    </div>
+
+    <script src="data-collector.js"></script>
+    <script>
+        class DataCollectorUI {
+            constructor() {
+                this.collector = new TarantoDataCollector();
+                this.collectedData = { streets: [], districts: [] };
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                document.getElementById('collectStreetsBtn').addEventListener('click', () => this.collectStreets());
+                document.getElementById('collectDistrictsBtn').addEventListener('click', () => this.collectDistricts());
+                document.getElementById('collectAllBtn').addEventListener('click', () => this.collectAll());
+                document.getElementById('exportBtn').addEventListener('click', () => this.exportData());
+                document.getElementById('clearLogBtn').addEventListener('click', () => this.clearLog());
+                document.getElementById('copyToClipboardBtn').addEventListener('click', () => this.copyToClipboard());
+                document.getElementById('downloadBtn').addEventListener('click', () => this.downloadJSON());
+
+                // Override console.log per mostrare nel log UI
+                const originalLog = console.log;
+                console.log = (...args) => {
+                    originalLog.apply(console, args);
+                    this.addToLog(args.join(' '));
+                };
+            }
+
+            addToLog(message) {
+                const logArea = document.getElementById('logArea');
+                const timestamp = new Date().toLocaleTimeString();
+                logArea.textContent += `[${timestamp}] ${message}\n`;
+                logArea.scrollTop = logArea.scrollHeight;
+            }
+
+            clearLog() {
+                document.getElementById('logArea').textContent = '';
+            }
+
+            updateProgress(percentage, text) {
+                document.getElementById('progressBar').style.width = percentage + '%';
+                document.getElementById('statusText').textContent = text;
+            }
+
+            updateCounts() {
+                document.getElementById('streetsCount').textContent = this.collectedData.streets.length;
+                document.getElementById('districtsCount').textContent = this.collectedData.districts.length;
+            }
+
+            updatePreview(type, data) {
+                const preview = document.getElementById(type + 'Preview');
+                if (data.length > 0) {
+                    preview.textContent = JSON.stringify(data.slice(0, 3), null, 2);
+                } else {
+                    preview.textContent = 'Nessun dato raccolto';
+                }
+            }
+
+            async collectStreets() {
+                try {
+                    this.updateProgress(0, 'Raccogliendo vie...');
+                    this.disableButtons(true);
+
+                    const streets = await this.collector.fetchTarantoStreets();
+                    this.collectedData.streets = streets;
+
+                    this.updateProgress(100, 'Vie raccolte con successo');
+                    this.updateCounts();
+                    this.updatePreview('streets', streets);
+                    this.checkExportAvailability();
+
+                } catch (error) {
+                    this.addToLog('Errore nella raccolta vie: ' + error.message);
+                    this.updateProgress(0, 'Errore nella raccolta vie');
+                } finally {
+                    this.disableButtons(false);
+                }
+            }
+
+            async collectDistricts() {
+                try {
+                    this.updateProgress(0, 'Raccogliendo quartieri...');
+                    this.disableButtons(true);
+
+                    const districts = await this.collector.fetchDistrictBoundaries();
+                    this.collectedData.districts = districts;
+
+                    this.updateProgress(100, 'Quartieri raccolti con successo');
+                    this.updateCounts();
+                    this.updatePreview('districts', districts);
+                    this.checkExportAvailability();
+
+                } catch (error) {
+                    this.addToLog('Errore nella raccolta quartieri: ' + error.message);
+                    this.updateProgress(0, 'Errore nella raccolta quartieri');
+                } finally {
+                    this.disableButtons(false);
+                }
+            }
+
+            async collectAll() {
+                try {
+                    this.updateProgress(0, 'Raccogliendo tutti i dati...');
+                    this.disableButtons(true);
+
+                    const result = await this.collector.collectAllData();
+                    this.collectedData = {
+                        streets: result.streets,
+                        districts: result.districts
+                    };
+
+                    this.updateProgress(100, 'Tutti i dati raccolti con successo');
+                    this.updateCounts();
+                    this.updatePreview('streets', result.streets);
+                    this.updatePreview('districts', result.districts);
+                    this.checkExportAvailability();
+
+                } catch (error) {
+                    this.addToLog('Errore nella raccolta dati: ' + error.message);
+                    this.updateProgress(0, 'Errore nella raccolta dati');
+                } finally {
+                    this.disableButtons(false);
+                }
+            }
+
+            exportData() {
+                const exportedData = this.collector.exportToJSON(
+                    this.collectedData.streets,
+                    this.collectedData.districts
+                );
+
+                document.getElementById('exportData').value = exportedData;
+                document.getElementById('copyToClipboardBtn').disabled = false;
+                document.getElementById('downloadBtn').disabled = false;
+
+                this.addToLog('Dati esportati in formato JSON');
+            }
+
+            copyToClipboard() {
+                const textarea = document.getElementById('exportData');
+                textarea.select();
+                document.execCommand('copy');
+                this.addToLog('Dati copiati negli appunti');
+            }
+
+            downloadJSON() {
+                const data = document.getElementById('exportData').value;
+                const blob = new Blob([data], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `taranto-data-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                URL.revokeObjectURL(url);
+                this.addToLog('File JSON scaricato');
+            }
+
+            disableButtons(disabled) {
+                document.getElementById('collectStreetsBtn').disabled = disabled;
+                document.getElementById('collectDistrictsBtn').disabled = disabled;
+                document.getElementById('collectAllBtn').disabled = disabled;
+            }
+
+            checkExportAvailability() {
+                const hasData = this.collectedData.streets.length > 0 || this.collectedData.districts.length > 0;
+                document.getElementById('exportBtn').disabled = !hasData;
+            }
+        }
+
+        // Inizializza l'interfaccia quando la pagina è caricata
+        document.addEventListener('DOMContentLoaded', () => {
+            new DataCollectorUI();
+        });
+    </script>
+</body>
+</html>

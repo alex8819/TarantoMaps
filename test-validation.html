@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test e Validazione - Mappa Quartieri Taranto</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .test-container {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .test-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .test-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+
+        .test-item.success {
+            border-left-color: #27ae60;
+            background: #d5f4e6;
+        }
+
+        .test-item.warning {
+            border-left-color: #f39c12;
+            background: #ffeaa7;
+        }
+
+        .test-item.error {
+            border-left-color: #e74c3c;
+            background: #fab1a0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .validation-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-primary:hover { background: #2980b9; }
+        .btn-success:hover { background: #229954; }
+        .btn-warning:hover { background: #d68910; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Test e Validazione Mappa Quartieri</h1>
+            <p>Verifica l'accuratezza dell'assegnazione vie-quartieri</p>
+        </header>
+
+        <div class="validation-controls">
+            <button class="btn-primary" id="runBasicTests">Test Base</button>
+            <button class="btn-warning" id="runBoundaryTests">Test Confini</button>
+            <button class="btn-success" id="runFullValidation">Validazione Completa</button>
+            <button class="btn-primary" id="exportReport">Esporta Rapporto</button>
+        </div>
+
+        <div class="stats-grid" id="statsGrid">
+            <!-- Stats will be populated dynamically -->
+        </div>
+
+        <div class="test-container">
+            <h2>Risultati Test</h2>
+            <div id="testProgress" style="margin-bottom: 15px;">
+                <div class="progress">
+                    <div class="progress-bar" id="testProgressBar" style="width: 0%;"></div>
+                </div>
+                <div id="testStatus">Pronto per iniziare i test</div>
+            </div>
+            <div class="test-results" id="testResults">
+                <!-- Test results will appear here -->
+            </div>
+        </div>
+
+        <div class="test-container">
+            <h2>Mappa di Test</h2>
+            <div style="height: 400px; border-radius: 6px; overflow: hidden;">
+                <div id="testMap" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+
+        <div class="test-container">
+            <h2>Log Dettagliato</h2>
+            <div class="log" id="detailedLog" style="height: 200px; font-size: 11px;"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <script src="quartieri-data.js"></script>
+    <script src="real-quartieri-data.js"></script>
+    <script src="app.js"></script>
+
+    <script>
+        class ValidationTester {
+            constructor() {
+                this.testMap = null;
+                this.results = [];
+                this.stats = {
+                    totalTests: 0,
+                    passed: 0,
+                    warnings: 0,
+                    failed: 0
+                };
+
+                this.init();
+            }
+
+            init() {
+                this.initTestMap();
+                this.setupEventListeners();
+                this.updateStats();
+            }
+
+            initTestMap() {
+                this.testMap = L.map('testMap').setView([40.4738, 17.2300], 11);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(this.testMap);
+
+                // Add district boundaries
+                L.geoJSON(realQuartieriData, {
+                    style: {
+                        fillColor: 'blue',
+                        weight: 2,
+                        opacity: 0.8,
+                        color: '#333',
+                        fillOpacity: 0.1
+                    }
+                }).addTo(this.testMap);
+            }
+
+            setupEventListeners() {
+                document.getElementById('runBasicTests').addEventListener('click', () => {
+                    this.runBasicTests();
+                });
+
+                document.getElementById('runBoundaryTests').addEventListener('click', () => {
+                    this.runBoundaryTests();
+                });
+
+                document.getElementById('runFullValidation').addEventListener('click', () => {
+                    this.runFullValidation();
+                });
+
+                document.getElementById('exportReport').addEventListener('click', () => {
+                    this.exportReport();
+                });
+            }
+
+            log(message, type = 'info') {
+                const logArea = document.getElementById('detailedLog');
+                const timestamp = new Date().toLocaleTimeString();
+                logArea.textContent += `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+                logArea.scrollTop = logArea.scrollHeight;
+            }
+
+            updateProgress(percentage, status) {
+                document.getElementById('testProgressBar').style.width = percentage + '%';
+                document.getElementById('testStatus').textContent = status;
+            }
+
+            addTestResult(title, description, status, details = {}) {
+                this.results.push({ title, description, status, details, timestamp: new Date() });
+
+                const resultItem = document.createElement('div');
+                resultItem.className = `test-item ${status}`;
+
+                resultItem.innerHTML = `
+                    <h4>${title}</h4>
+                    <p>${description}</p>
+                    ${Object.keys(details).length > 0 ?
+                        `<small>Dettagli: ${JSON.stringify(details, null, 2)}</small>` : ''}
+                `;
+
+                document.getElementById('testResults').appendChild(resultItem);
+
+                // Update stats
+                this.stats.totalTests++;
+                if (status === 'success') this.stats.passed++;
+                else if (status === 'warning') this.stats.warnings++;
+                else if (status === 'error') this.stats.failed++;
+
+                this.updateStats();
+            }
+
+            updateStats() {
+                const statsGrid = document.getElementById('statsGrid');
+                statsGrid.innerHTML = `
+                    <div class="stat-box">
+                        <div class="stat-number">${this.stats.totalTests}</div>
+                        <div class="stat-label">Test Totali</div>
+                    </div>
+                    <div class="stat-box" style="color: #27ae60;">
+                        <div class="stat-number">${this.stats.passed}</div>
+                        <div class="stat-label">Superati</div>
+                    </div>
+                    <div class="stat-box" style="color: #f39c12;">
+                        <div class="stat-number">${this.stats.warnings}</div>
+                        <div class="stat-label">Warning</div>
+                    </div>
+                    <div class="stat-box" style="color: #e74c3c;">
+                        <div class="stat-number">${this.stats.failed}</div>
+                        <div class="stat-label">Falliti</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">${Object.keys(realStreetsData).length}</div>
+                        <div class="stat-label">Vie nel DB</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">${realQuartieriData.features.length}</div>
+                        <div class="stat-label">Quartieri</div>
+                    </div>
+                `;
+            }
+
+            clearResults() {
+                document.getElementById('testResults').innerHTML = '';
+                this.results = [];
+                this.stats = { totalTests: 0, passed: 0, warnings: 0, failed: 0 };
+                this.updateStats();
+                document.getElementById('detailedLog').textContent = '';
+            }
+
+            async runBasicTests() {
+                this.clearResults();
+                this.log('Inizio test di base');
+                this.updateProgress(0, 'Eseguendo test di base...');
+
+                // Test 1: Verifica struttura dati
+                try {
+                    if (realQuartieriData && realQuartieriData.features) {
+                        this.addTestResult(
+                            'Struttura Dati Quartieri',
+                            'Verifica che i dati dei quartieri siano ben formati',
+                            'success',
+                            { quartieri: realQuartieriData.features.length }
+                        );
+                    } else {
+                        throw new Error('Dati quartieri non trovati o malformati');
+                    }
+                } catch (error) {
+                    this.addTestResult(
+                        'Struttura Dati Quartieri',
+                        'Errore nella struttura dati',
+                        'error',
+                        { error: error.message }
+                    );
+                }
+
+                this.updateProgress(25, 'Test struttura dati...');
+
+                // Test 2: Verifica vie
+                const streetCount = Object.keys(realStreetsData).length;
+                if (streetCount > 0) {
+                    this.addTestResult(
+                        'Database Vie',
+                        `Database contiene ${streetCount} vie`,
+                        streetCount > 20 ? 'success' : 'warning',
+                        { vie_totali: streetCount }
+                    );
+                } else {
+                    this.addTestResult(
+                        'Database Vie',
+                        'Database vie vuoto o non accessibile',
+                        'error'
+                    );
+                }
+
+                this.updateProgress(50, 'Test database vie...');
+
+                // Test 3: Verifica corrispondenza quartieri-vie
+                let orphanStreets = 0;
+                let validMappings = 0;
+
+                for (const [street, data] of Object.entries(realStreetsData)) {
+                    const districtExists = realQuartieriData.features.some(
+                        f => f.properties.name === data.district
+                    );
+
+                    if (districtExists) {
+                        validMappings++;
+                    } else {
+                        orphanStreets++;
+                        this.log(`Via "${street}" assegnata a quartiere inesistente: "${data.district}"`);
+                    }
+                }
+
+                this.updateProgress(75, 'Test corrispondenze...');
+
+                if (orphanStreets === 0) {
+                    this.addTestResult(
+                        'Corrispondenza Quartieri-Vie',
+                        'Tutte le vie sono assegnate a quartieri esistenti',
+                        'success',
+                        { vie_valide: validMappings }
+                    );
+                } else {
+                    this.addTestResult(
+                        'Corrispondenza Quartieri-Vie',
+                        `${orphanStreets} vie assegnate a quartieri inesistenti`,
+                        'warning',
+                        { vie_orfane: orphanStreets, vie_valide: validMappings }
+                    );
+                }
+
+                // Test 4: Verifica coordinate
+                let invalidCoordinates = 0;
+                for (const [street, data] of Object.entries(realStreetsData)) {
+                    const coords = data.coordinates;
+                    if (!coords || coords.length !== 2 ||
+                        coords[0] < 40.3 || coords[0] > 40.7 ||
+                        coords[1] < 17.0 || coords[1] > 17.5) {
+                        invalidCoordinates++;
+                        this.log(`Coordinate non valide per "${street}": [${coords}]`);
+                    }
+                }
+
+                if (invalidCoordinates === 0) {
+                    this.addTestResult(
+                        'Validità Coordinate',
+                        'Tutte le coordinate sono nel range di Taranto',
+                        'success'
+                    );
+                } else {
+                    this.addTestResult(
+                        'Validità Coordinate',
+                        `${invalidCoordinates} vie con coordinate non valide`,
+                        'warning',
+                        { coordinate_invalide: invalidCoordinates }
+                    );
+                }
+
+                this.updateProgress(100, 'Test di base completati');
+                this.log('Test di base completati');
+            }
+
+            async runBoundaryTests() {
+                this.log('Inizio test confini');
+                this.updateProgress(0, 'Testando confini dei quartieri...');
+
+                let boundaryErrors = 0;
+                let totalPoints = 0;
+
+                for (let i = 0; i < realQuartieriData.features.length; i++) {
+                    const feature = realQuartieriData.features[i];
+                    const district = feature.properties.name;
+
+                    this.updateProgress((i / realQuartieriData.features.length) * 100,
+                        `Testando confini: ${district}`);
+
+                    try {
+                        // Verifica che il poligono sia valido
+                        const polygon = turf.polygon(feature.geometry.coordinates);
+                        const area = turf.area(polygon);
+
+                        if (area > 0) {
+                            // Test che le vie del quartiere siano effettivamente nel poligono
+                            const districtStreets = Object.entries(realStreetsData)
+                                .filter(([street, data]) => data.district === district);
+
+                            let streetsInBoundary = 0;
+                            let streetsOutBoundary = 0;
+
+                            for (const [street, data] of districtStreets) {
+                                const point = turf.point([data.coordinates[1], data.coordinates[0]]);
+                                if (turf.booleanPointInPolygon(point, polygon)) {
+                                    streetsInBoundary++;
+                                } else {
+                                    streetsOutBoundary++;
+                                    this.log(`"${street}" è fuori dai confini di "${district}"`);
+                                }
+                                totalPoints++;
+                            }
+
+                            const accuracy = districtStreets.length > 0 ?
+                                (streetsInBoundary / districtStreets.length) * 100 : 100;
+
+                            if (accuracy >= 80) {
+                                this.addTestResult(
+                                    `Confini ${district}`,
+                                    `${accuracy.toFixed(1)}% delle vie sono nei confini corretti`,
+                                    'success',
+                                    {
+                                        area_km2: (area / 1000000).toFixed(2),
+                                        vie_corrette: streetsInBoundary,
+                                        vie_fuori_confine: streetsOutBoundary
+                                    }
+                                );
+                            } else if (accuracy >= 50) {
+                                this.addTestResult(
+                                    `Confini ${district}`,
+                                    `Solo ${accuracy.toFixed(1)}% delle vie sono nei confini`,
+                                    'warning',
+                                    {
+                                        area_km2: (area / 1000000).toFixed(2),
+                                        vie_corrette: streetsInBoundary,
+                                        vie_fuori_confine: streetsOutBoundary
+                                    }
+                                );
+                            } else {
+                                this.addTestResult(
+                                    `Confini ${district}`,
+                                    `Confini molto imprecisi: ${accuracy.toFixed(1)}% accuratezza`,
+                                    'error',
+                                    {
+                                        area_km2: (area / 1000000).toFixed(2),
+                                        vie_corrette: streetsInBoundary,
+                                        vie_fuori_confine: streetsOutBoundary
+                                    }
+                                );
+                                boundaryErrors++;
+                            }
+                        }
+                    } catch (error) {
+                        this.addTestResult(
+                            `Confini ${district}`,
+                            'Errore nella geometria del poligono',
+                            'error',
+                            { error: error.message }
+                        );
+                        boundaryErrors++;
+                    }
+                }
+
+                this.updateProgress(100, 'Test confini completati');
+                this.log(`Test confini completati. ${boundaryErrors} errori trovati su ${totalPoints} punti testati`);
+            }
+
+            async runFullValidation() {
+                await this.runBasicTests();
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Pausa
+                await this.runBoundaryTests();
+
+                // Test aggiuntivi per validazione completa
+                this.log('Eseguendo test aggiuntivi...');
+
+                // Test performance ricerca
+                const startTime = performance.now();
+                const testQueries = ['Via Dante', 'Corso Umberto', 'Via Archita', 'Via Pitagora'];
+                let searchSuccesses = 0;
+
+                for (const query of testQueries) {
+                    if (realStreetsData[query]) {
+                        searchSuccesses++;
+                    }
+                }
+
+                const searchTime = performance.now() - startTime;
+
+                this.addTestResult(
+                    'Performance Ricerca',
+                    `${searchSuccesses}/${testQueries.length} query di test riuscite in ${searchTime.toFixed(2)}ms`,
+                    searchSuccesses === testQueries.length ? 'success' : 'warning',
+                    { tempo_ms: searchTime.toFixed(2) }
+                );
+
+                this.log('Validazione completa terminata');
+            }
+
+            exportReport() {
+                const report = {
+                    timestamp: new Date().toISOString(),
+                    summary: this.stats,
+                    results: this.results,
+                    system_info: {
+                        user_agent: navigator.userAgent,
+                        quartieri_count: realQuartieriData.features.length,
+                        streets_count: Object.keys(realStreetsData).length
+                    }
+                };
+
+                const blob = new Blob([JSON.stringify(report, null, 2)],
+                    { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `taranto-validation-report-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                URL.revokeObjectURL(url);
+                this.log('Rapporto esportato');
+            }
+        }
+
+        // Inizializza il tester quando la pagina è caricata
+        document.addEventListener('DOMContentLoaded', () => {
+            new ValidationTester();
+        });
+    </script>
+</body>
+</html>

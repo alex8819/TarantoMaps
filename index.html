@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mappa Quartieri Taranto</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Mappa Quartieri Taranto</h1>
+            <p>Scopri a quale quartiere appartiene una via di Taranto e provincia</p>
+        </header>
+
+        <div class="controls">
+            <div class="search-container">
+                <input
+                    type="text"
+                    id="streetSearch"
+                    placeholder="Inserisci nome via (es. Via Dante, Corso Umberto...)"
+                    autocomplete="off"
+                >
+                <button id="searchButton">Cerca</button>
+                <button id="clearButton">Pulisci</button>
+            </div>
+
+            <div class="admin-tools" style="margin-top: 15px;">
+                <button id="collectDataBtn" class="btn-admin">📡 Raccogli Dati</button>
+                <button id="validateDataBtn" class="btn-admin">🧪 Valida Dati</button>
+                <button id="statsBtn" class="btn-admin">📊 Statistiche</button>
+                <button id="exportBtn" class="btn-admin">💾 Esporta</button>
+            </div>
+
+            <div class="results" id="searchResults" style="display: none;">
+                <div class="result-info">
+                    <span id="resultText"></span>
+                    <span id="districtName"></span>
+                </div>
+            </div>
+
+            <div id="adminPanel" class="admin-panel" style="display: none;">
+                <h3 id="adminTitle">Pannello Amministrativo</h3>
+                <div id="adminContent"></div>
+                <button id="closeAdminBtn">✕ Chiudi</button>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <div id="map"></div>
+
+            <div class="legend">
+                <h3>Quartieri</h3>
+                <div class="legend-items" id="legendItems">
+                    <!-- Legend items will be populated dynamically -->
+                </div>
+                <button id="toggleLegend">Nascondi Legenda</button>
+            </div>
+        </div>
+
+        <footer>
+            <p>Usa OpenStreetMap • Clicca sui quartieri per maggiori informazioni</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Turf.js for geographical operations -->
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+
+    <!-- Quartieri data (fallback) -->
+    <script src="quartieri-data.js"></script>
+
+    <!-- Real quartieri data (preferred) -->
+    <script src="real-quartieri-data.js"></script>
+
+    <!-- Data collector -->
+    <script src="data-collector.js"></script>
+
+    <!-- Boundary generator -->
+    <script src="boundary-generator.js"></script>
+
+    <!-- Main application -->
+    <script src="app.js"></script>
+</body>
+</html>
